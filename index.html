@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f6fb">
+  <title>Binärmagie – das magische Gedächtnis</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #17243b;
+      background: #f3f6fb;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --blue: #2865d8;
+      --blue-dark: #1948a8;
+      --surface: #fff;
+      --line: #e2e8f1;
+      --muted: #627087;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 12% 0%, #e5efff 0, transparent 34rem),
+        #f3f6fb;
+    }
+
+    button, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .page {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 38px 0 56px;
+    }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 30px;
+      color: var(--blue-dark);
+      font-size: .82rem;
+      font-weight: 750;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 3px;
+      padding: 4px;
+      border-radius: 10px;
+      background: var(--blue);
+    }
+
+    .brand-mark span { border-radius: 3px; background: #fff; }
+    .brand-mark span:nth-child(2), .brand-mark span:nth-child(3) { background: #a9c8ff; }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      letter-spacing: -.055em;
+      line-height: 1.05;
+    }
+
+    .intro {
+      max-width: 590px;
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.65;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      align-items: start;
+      gap: 20px;
+    }
+
+    .card {
+      border: 1px solid #e8edf5;
+      border-radius: 20px;
+      background: var(--surface);
+      box-shadow: 0 12px 34px rgb(34 55 91 / 6%);
+    }
+
+    .game-card { padding: clamp(18px, 3vw, 30px); }
+    .side-card { padding: 22px; }
+
+    .controls {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: end;
+    }
+
+    .field label {
+      display: block;
+      margin: 0 0 7px;
+      color: #506078;
+      font-size: .78rem;
+      font-weight: 700;
+    }
+
+    .primary-button {
+      min-height: 44px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 11px;
+      color: #fff;
+      background: var(--blue);
+      font-weight: 750;
+      box-shadow: 0 5px 12px rgb(40 101 216 / 18%);
+      transition: background .15s ease, transform .15s ease;
+    }
+
+    .primary-button:hover { background: var(--blue-dark); transform: translateY(-1px); }
+    button:focus-visible, select:focus-visible, .tile:focus-visible {
+      outline: 3px solid #8bb6ff;
+      outline-offset: 3px;
+    }
+
+    .status {
+      display: flex;
+      gap: 13px;
+      align-items: flex-start;
+      min-height: 88px;
+      margin-bottom: 24px;
+      padding: 16px 18px;
+      border: 1px solid #dce8fa;
+      border-radius: 13px;
+      background: #f5f9ff;
+    }
+
+    .step-number {
+      display: grid;
+      flex: 0 0 28px;
+      height: 28px;
+      place-items: center;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--blue);
+      font-size: .8rem;
+      font-weight: 800;
+    }
+
+    .status strong { display: block; margin: 1px 0 3px; }
+    .status p { margin: 0; color: #506078; font-size: .92rem; line-height: 1.45; }
+    .status[data-result="success"] { border-color: #b7e5cd; background: #f0fbf5; }
+    .status[data-result="success"] .step-number { background: #16834b; }
+    .status[data-result="error"] { border-color: #ffd6aa; background: #fff8f0; }
+    .status[data-result="error"] .step-number { background: #c96a0b; }
+
+    .board-wrap {
+      display: grid;
+      min-height: 420px;
+      place-items: center;
+      padding: 8px 0 18px;
+    }
+
+    .board {
+      display: grid;
+      width: min(100%, 500px);
+      grid-template-columns: repeat(var(--size), minmax(0, 1fr));
+      gap: clamp(4px, 1.05vw, 9px);
+      padding: clamp(8px, 1.8vw, 14px);
+      border: 1px solid #e7edf5;
+      border-radius: 17px;
+      background: #f6f8fc;
+      box-shadow: inset 0 1px 4px rgb(33 51 79 / 4%);
+    }
+
+    .tile {
+      display: grid;
+      aspect-ratio: 1;
+      min-width: 0;
+      place-items: center;
+      padding: 0;
+      border: 1px solid #d7dfe9;
+      border-radius: clamp(5px, 1vw, 10px);
+      color: #35445c;
+      background: #fff;
+      font-size: clamp(.58rem, 1.7vw, .95rem);
+      font-weight: 750;
+      transition: transform .12s ease, background .15s ease, box-shadow .15s ease;
+    }
+
+    .tile:not(:disabled):hover { transform: scale(1.055); box-shadow: 0 4px 12px rgb(21 44 82 / 18%); }
+    .tile[data-bit="1"] {
+      border-color: var(--blue-dark);
+      color: #fff;
+      background: var(--blue);
+    }
+
+    body[data-theme="violet"] { --blue: #7450c8; --blue-dark: #5435a0; }
+    body[data-theme="orange"] { --blue: #d65e25; --blue-dark: #a63d12; }
+
+    .board.revealed {
+      background:
+        linear-gradient(to left, #fff0c9 calc(100% / var(--size)), transparent 0),
+        linear-gradient(to top, #fff0c9 calc(100% / var(--size)), #f6f8fc 0);
+    }
+    .tile.parity-bit { border: 3px solid #c99420; }
+    .tile.is-answer { z-index: 1; box-shadow: 0 0 0 4px #f4a340, 0 0 0 7px #fff; }
+    .tile:disabled { cursor: default; }
+
+    .side-card h2 { margin: 0 0 16px; font-size: 1.05rem; letter-spacing: -.02em; }
+    .steps { display: grid; gap: 17px; margin: 0; padding: 0; list-style: none; }
+    .steps li {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 11px;
+      padding: 12px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+    }
+    .steps li[aria-current="step"] { border-color: #d3def0; background: #f3f6fb; }
+    .steps li[aria-current="step"] .step-index { color: #fff; background: var(--blue); }
+    .step-index {
+      display: grid;
+      width: 27px;
+      height: 27px;
+      place-items: center;
+      border-radius: 9px;
+      color: var(--blue-dark);
+      background: #edf3ff;
+      font-size: .76rem;
+      font-weight: 800;
+    }
+
+    .steps strong { display: block; margin: 1px 0 4px; font-size: .88rem; }
+    .steps p { margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.5; }
+
+    .secret-link {
+      display: block;
+      width: 100%;
+      margin-top: 22px;
+      padding: 17px 0 0;
+      border: 0;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      background: transparent;
+      text-align: left;
+      font-size: .82rem;
+    }
+
+    .stage-action { margin-top: 13px; }
+    dialog {
+      width: min(520px, calc(100% - 32px));
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      color: #17243b;
+      box-shadow: 0 24px 80px rgb(20 35 60 / 25%);
+    }
+    dialog::backdrop { background: rgb(20 35 60 / 45%); }
+    dialog h2 { margin: 0 0 14px; font-size: 1.3rem; }
+    dialog p, dialog li { color: #506078; line-height: 1.65; }
+    dialog ol { padding-left: 22px; }
+    .dialog-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+    .secondary-button {
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid #d5deeb;
+      border-radius: 11px;
+      background: #fff;
+      color: #17243b;
+      font-weight: 650;
+    }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 780px) {
+      .page { width: min(100% - 28px, 600px); padding-top: 24px; }
+      header { align-items: start; }
+      .layout { grid-template-columns: 1fr; }
+      .board-wrap { min-height: 0; }
+      .side-card { order: 2; }
+    }
+
+    @media (max-width: 520px) {
+      .controls { align-items: stretch; flex-direction: column; }
+      .control-group { align-items: stretch; }
+      .field { flex: 1 1 130px; }
+      .primary-button { width: 100%; }
+      .status { min-height: 0; }
+      .game-card { padding: 16px; }
+      .board { gap: 4px; }
+    }
+  </style>
+</head>
+<body data-theme="blue">
+  <main class="page">
+    <div class="topline">
+      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+      Das magische Gedächtnis
+    </div>
+    <header>
+      <div>
+        <h1>Binärmagie</h1>
+        <p class="intro">Ein Muster. Eine heimliche Änderung. Eine übermenschliche Gedächtnisleistung. Oder doch nicht?</p>
+      </div>
+    </header>
+
+    <div class="layout">
+      <section class="card game-card" aria-label="Binärmagie-Spiel">
+        <div class="controls">
+          <div class="control-group">
+            <div class="field">
+              <label for="size">Matrixgrösse</label>
+              <select id="size">
+                <option value="5">5 × 5</option>
+                <option value="6">6 × 6</option>
+                <option value="7">7 × 7</option>
+                <option value="8">8 × 8</option>
+                <option value="9">9 × 9</option>
+                <option value="10">10 × 10</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="theme">Farben</label>
+              <select id="theme">
+                <option value="blue">Weiss &amp; Blau</option>
+                <option value="violet">Weiss &amp; Violett</option>
+                <option value="orange">Weiss &amp; Orange</option>
+              </select>
+            </div>
+          </div>
+          <button class="primary-button" id="new-game" type="button">Neue Matrix</button>
+        </div>
+
+        <div class="status" id="status" role="status" aria-live="polite">
+          <span class="step-number" id="step-number">1</span>
+          <div>
+            <strong id="status-title">Lehrperson: Muster einprägen</strong>
+            <p id="status-message">Schau dir das Muster in Ruhe an. Wenn du bereit bist, schaust du weg.</p>
+            <button class="primary-button stage-action" id="ready" type="button">Ich bin bereit – ich schaue weg</button>
+          </div>
+        </div>
+
+        <div class="board-wrap">
+          <div class="board" id="board" role="group" aria-label="Farbmuster"></div>
+        </div>
+      </section>
+
+      <aside class="card side-card">
+        <h2>So läuft die Vorführung</h2>
+        <ol class="steps">
+          <li data-phase="memorize">
+            <span class="step-index">1</span>
+            <div><strong>Muster einprägen</strong><p>Die Lehrperson betrachtet das Muster und gibt dann das Zeichen zum Ändern.</p></div>
+          </li>
+          <li data-phase="student">
+            <span class="step-index">2</span>
+            <div><strong>Ein Feld ändern</strong><p>Die Lehrperson schaut weg. Eine Person klickt genau einmal auf ein beliebiges Feld.</p></div>
+          </li>
+          <li data-phase="teacher">
+            <span class="step-index">3</span>
+            <div><strong>Änderung wiederfinden</strong><p>Die Lehrperson schaut wieder hin und klickt auf das veränderte Feld. Stimmt es?</p></div>
+          </li>
+        </ol>
+        <button class="secret-link" id="secret" type="button">Das Geheimnis …</button>
+      </aside>
+    </div>
+  </main>
+
+  <dialog id="spoiler-dialog" aria-labelledby="spoiler-title">
+    <h2 id="spoiler-title">Das Geheimnis wirklich lüften?</h2>
+    <div id="spoiler-warning">
+      <p>Die Erklärung verrät, wie der Trick funktioniert. Öffne sie nicht während der Vorführung.</p>
+      <div class="dialog-actions">
+        <button class="secondary-button" id="cancel-spoiler" type="button" autofocus>Lieber nicht</button>
+        <button class="primary-button" id="reveal-secret" type="button">Ja, Geheimnis zeigen</button>
+      </div>
+    </div>
+    <div id="spoiler-explanation" hidden>
+      <p>Das Gedächtnis ist nur die Geschichte dazu. In Wirklichkeit hilft die <strong>zweidimensionale Parität</strong>:</p>
+      <ol>
+        <li>Weiss steht für 0, die dunklere Farbe für 1.</li>
+        <li>Bei einer Matrix mit n × n Feldern sind (n − 1) × (n − 1) Felder zufällig. Die letzte Zeile und Spalte werden mit Prüfbits ergänzt. Dadurch enthält jede Zeile und jede Spalte eine gerade Anzahl dunkler Felder – einschliesslich der Ecke unten rechts.</li>
+        <li>Eine einzelne Farbänderung macht genau eine Zeile und eine Spalte ungerade. Zähle die dunklen Felder: Am Schnittpunkt der beiden ungeraden Linien liegt das veränderte Feld.</li>
+      </ol>
+      <p>Das funktioniert auch, wenn ein Prüfbit geändert wird.<br>Allerdings nur bei genau einer Änderung. Mehrere Änderungen lassen sich auf diese Weise nicht zuverlässig lokalisieren.</p>
+      <div class="dialog-actions">
+        <button class="primary-button" id="close-spoiler" type="button">Erklärung schliessen</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    const sizeSelect = document.querySelector("#size");
+    const themeSelect = document.querySelector("#theme");
+    const newGameButton = document.querySelector("#new-game");
+    const boardElement = document.querySelector("#board");
+    const readyButton = document.querySelector("#ready");
+    const steps = document.querySelectorAll(".steps li");
+    const spoilerDialog = document.querySelector("#spoiler-dialog");
+    const spoilerTitle = document.querySelector("#spoiler-title");
+    const spoilerWarning = document.querySelector("#spoiler-warning");
+    const spoilerExplanation = document.querySelector("#spoiler-explanation");
+    const closeSpoilerButton = document.querySelector("#close-spoiler");
+    const status = document.querySelector("#status");
+    const statusTitle = document.querySelector("#status-title");
+    const statusMessage = document.querySelector("#status-message");
+    const stepNumber = document.querySelector("#step-number");
+
+    let board = [];
+    let phase = "memorize";
+    let answer = null;
+    let showValues = false;
+
+    function makeBoard(size) {
+      const matrix = Array.from({ length: size }, () => Array(size).fill(0));
+      const dataSize = size - 1;
+
+      for (let row = 0; row < dataSize; row += 1) {
+        for (let column = 0; column < dataSize; column += 1) {
+          matrix[row][column] = Math.random() < 0.5 ? 0 : 1;
+        }
+        matrix[row][dataSize] = matrix[row].slice(0, dataSize).reduce((sum, bit) => sum ^ bit, 0);
+      }
+
+      for (let column = 0; column < dataSize; column += 1) {
+        let parity = 0;
+        for (let row = 0; row < dataSize; row += 1) parity ^= matrix[row][column];
+        matrix[dataSize][column] = parity;
+      }
+
+      let cornerParity = 0;
+      for (let column = 0; column < dataSize; column += 1) cornerParity ^= matrix[dataSize][column];
+      matrix[dataSize][dataSize] = cornerParity;
+      return matrix;
+    }
+
+    function updateStatus(step, title, message, result = "") {
+      stepNumber.textContent = step;
+      statusTitle.textContent = title;
+      statusMessage.textContent = message;
+      status.dataset.result = result;
+      readyButton.hidden = phase !== "memorize";
+      steps.forEach((item) => {
+        if (item.dataset.phase === phase) {
+          item.setAttribute("aria-current", "step");
+        } else {
+          item.removeAttribute("aria-current");
+        }
+      });
+    }
+
+    function updateTile(tile) {
+      const row = Number(tile.dataset.row) + 1;
+      const column = Number(tile.dataset.column) + 1;
+      const darkColor = { blue: "Blau", violet: "Violett", orange: "Orange" }[themeSelect.value];
+      const color = tile.dataset.bit === "0" ? "Weiss" : darkColor;
+      const isParityBit = showValues && (row === board.length || column === board.length);
+      tile.textContent = showValues ? tile.dataset.bit : "";
+      tile.classList.toggle("parity-bit", isParityBit);
+      const valueLabel = showValues ? `, Wert ${tile.dataset.bit}${isParityBit ? ", Prüfbit" : ""}` : "";
+      tile.setAttribute("aria-label", `Zeile ${row}, Spalte ${column}: ${color}${valueLabel}`);
+    }
+
+    function renderBoard() {
+      const size = board.length;
+      boardElement.replaceChildren();
+      boardElement.style.setProperty("--size", size);
+      boardElement.classList.toggle("revealed", showValues);
+
+      board.forEach((row, rowIndex) => {
+        row.forEach((bit, columnIndex) => {
+          const tile = document.createElement("button");
+          tile.type = "button";
+          tile.className = "tile";
+          tile.dataset.row = rowIndex;
+          tile.dataset.column = columnIndex;
+          tile.dataset.bit = bit;
+          tile.disabled = phase === "memorize" || phase === "finished";
+          updateTile(tile);
+          tile.addEventListener("click", handleTileClick);
+          boardElement.append(tile);
+        });
+      });
+
+    }
+
+    function findChangedCell() {
+      const oddRows = [];
+      const oddColumns = [];
+
+      for (let row = 0; row < board.length; row += 1) {
+        if (board[row].reduce((sum, bit) => sum + bit, 0) % 2 !== 0) oddRows.push(row);
+      }
+
+      for (let column = 0; column < board.length; column += 1) {
+        let sum = 0;
+        for (let row = 0; row < board.length; row += 1) sum += board[row][column];
+        if (sum % 2 !== 0) oddColumns.push(column);
+      }
+
+      if (oddRows.length !== 1 || oddColumns.length !== 1) return null;
+      return { row: oddRows[0], column: oddColumns[0] };
+    }
+
+    function handleTileClick(event) {
+      const tile = event.currentTarget;
+      const row = Number(tile.dataset.row);
+      const column = Number(tile.dataset.column);
+
+      if (phase === "student") {
+        board[row][column] ^= 1;
+        answer = findChangedCell();
+        if (!answer) {
+          phase = "finished";
+          renderBoard();
+          updateStatus("!", "Die Runde konnte nicht ausgewertet werden", "Bitte starte mit «Neue Matrix» noch einmal.", "error");
+          return;
+        }
+        phase = "teacher";
+        tile.dataset.bit = board[row][column];
+        updateTile(tile);
+        tile.blur();
+        updateStatus("3", "Lehrperson: Änderung wiederfinden", "Du darfst wieder hinschauen. Welches Feld wurde verändert? Klicke darauf.");
+        return;
+      }
+
+      if (phase !== "teacher") return;
+      phase = "finished";
+
+      if (row === answer.row && column === answer.column) {
+        tile.classList.add("is-answer");
+        updateStatus("✓", "Gefunden!", "Genau dieses Feld wurde verändert. Bereit für eine weitere Runde? Klicke auf «Neue Matrix».", "success");
+      } else {
+        const answerTile = boardElement.querySelector(`[data-row="${answer.row}"][data-column="${answer.column}"]`);
+        answerTile.classList.add("is-answer");
+        updateStatus("!", "Nicht ganz!", "Das orange umrandete Feld wurde verändert. Mit «Neue Matrix» startet eine neue Runde.", "error");
+      }
+
+      boardElement.querySelectorAll(".tile").forEach((cell) => { cell.disabled = true; });
+    }
+
+    function startGame() {
+      const size = Number(sizeSelect.value);
+      board = makeBoard(size);
+      answer = null;
+      showValues = false;
+      phase = "memorize";
+      if (spoilerDialog.open) spoilerDialog.close();
+      renderBoard();
+      updateStatus("1", "Lehrperson: Muster einprägen", "Schau dir das Muster in Ruhe an. Wenn du bereit bist, schaust du weg.");
+    }
+
+    newGameButton.addEventListener("click", startGame);
+    sizeSelect.addEventListener("change", startGame);
+    readyButton.addEventListener("click", () => {
+      phase = "student";
+      boardElement.querySelectorAll(".tile").forEach((tile) => { tile.disabled = false; });
+      updateStatus("2", "Schüler:in: ein Feld verändern", "Die Lehrperson schaut weg. Klicke genau einmal auf ein beliebiges Feld – es wechselt seine Farbe.");
+    });
+    themeSelect.addEventListener("change", () => {
+      document.body.dataset.theme = themeSelect.value;
+      boardElement.querySelectorAll(".tile").forEach(updateTile);
+    });
+    document.querySelector("#secret").addEventListener("click", () => {
+      spoilerTitle.textContent = "Das Geheimnis wirklich lüften?";
+      spoilerWarning.hidden = false;
+      spoilerExplanation.hidden = true;
+      spoilerDialog.showModal();
+    });
+    document.querySelector("#reveal-secret").addEventListener("click", () => {
+      spoilerWarning.hidden = true;
+      spoilerExplanation.hidden = false;
+      spoilerTitle.textContent = "Das steckt hinter der Binärmagie";
+      closeSpoilerButton.focus();
+    });
+    document.querySelector("#cancel-spoiler").addEventListener("click", () => { spoilerDialog.close(); });
+    closeSpoilerButton.addEventListener("click", () => {
+      spoilerDialog.close();
+      showValues = true;
+      boardElement.classList.add("revealed");
+      boardElement.querySelectorAll(".tile").forEach(updateTile);
+    });
+
+    startGame();
+  </script>
+</body>
+</html>
